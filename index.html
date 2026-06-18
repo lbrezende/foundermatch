@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>FounderMatch — Discovery</title>
+<link rel="stylesheet" href="fonts.css">
+<style>
+  :root{
+    --bg:#0b0f1a; --card:#1e293b; --border:#334155; --ink:#f8fafc;
+    --muted:#94a3b8; --dim:#64748b; --indigo:#6366f1; --indigo-l:#818cf8;
+    --green:#10b981; --red:#ef4444; --amber:#f59e0b;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    font-family:'Inter',system-ui,sans-serif;
+    background:#05070d;
+    display:flex;align-items:center;justify-content:center;
+    min-height:100dvh;color:var(--ink);
+  }
+  /* phone frame */
+  .phone{
+    position:relative;width:402px;height:874px;max-width:100vw;max-height:100dvh;
+    background:var(--bg);overflow:hidden;display:flex;flex-direction:column;
+    justify-content:space-between;box-shadow:0 30px 80px rgba(0,0,0,.6);
+  }
+  @media(max-width:430px){ .phone{width:100vw;height:100dvh;} }
+
+  /* header */
+  .header{padding:60px 24px 20px;display:flex;flex-direction:column;gap:4px;flex:0 0 auto;}
+  .header .top{display:flex;align-items:center;justify-content:space-between;}
+  .logo{font-weight:800;font-size:22px;color:var(--ink);}
+  .header .icons{display:flex;gap:16px;}
+  .header .icons svg{width:24px;height:24px;color:var(--ink);}
+  .subtitle{font-size:14px;color:var(--muted);}
+
+  /* stack */
+  .stage{flex:1 1 auto;padding:0 20px;position:relative;min-height:0;}
+  .stack{position:relative;width:100%;height:100%;}
+  .card{
+    position:absolute;inset:0;border-radius:24px;overflow:hidden;
+    background:var(--card) center/cover no-repeat;
+    display:flex;flex-direction:column;justify-content:flex-end;padding:24px;
+    will-change:transform;user-select:none;touch-action:none;
+    box-shadow:0 12px 30px rgba(0,0,0,.45);
+  }
+  .card::after{ /* gradient overlay */
+    content:"";position:absolute;inset:0;border-radius:24px;pointer-events:none;
+    background:linear-gradient(to bottom, rgba(0,0,0,0) 45%, rgba(0,0,0,.82) 100%);
+  }
+  .card>*{position:relative;z-index:2;}
+  .card .info{display:flex;flex-direction:column;gap:12px;}
+  .name{font-weight:700;font-size:28px;line-height:1.1;color:var(--ink);}
+  .loc{display:flex;align-items:center;gap:4px;color:var(--muted);font-size:14px;}
+  .loc svg{width:14px;height:14px;}
+  .help-label{font-weight:700;font-size:14px;color:var(--indigo-l);text-transform:uppercase;}
+  .tags{display:flex;flex-wrap:wrap;gap:8px;}
+  .tag{background:var(--border);border-radius:6px;padding:4px 10px;font-size:12px;font-weight:600;color:var(--muted);}
+  .bio{font-size:14px;line-height:1.5;color:var(--ink);}
+  .compat-row{display:flex;align-items:center;justify-content:space-between;font-size:12px;}
+  .compat-pct{font-weight:700;color:var(--green);}
+  .compat-sub{color:var(--muted);}
+  .bar{height:6px;border-radius:3px;background:rgba(51,65,85,.5);overflow:hidden;}
+  .bar>span{display:block;height:100%;border-radius:3px;background:var(--green);}
+
+  /* swipe overlays */
+  .stamp{
+    position:absolute;top:28px;z-index:3;font-weight:800;font-size:34px;letter-spacing:1px;
+    padding:6px 16px;border:4px solid;border-radius:12px;opacity:0;text-transform:uppercase;
+    transition:opacity .05s linear;
+  }
+  .stamp.like{left:24px;color:var(--green);border-color:var(--green);transform:rotate(-18deg);}
+  .stamp.nope{right:24px;color:var(--red);border-color:var(--red);transform:rotate(18deg);}
+  .stamp.super{left:50%;top:50%;translate:-50% -50%;color:var(--amber);border-color:var(--amber);font-size:26px;}
+
+  /* empty state */
+  .empty{
+    position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;
+    gap:14px;text-align:center;padding:40px;border-radius:24px;
+  }
+  .empty.show{display:flex;}
+  .empty h3{font-size:20px;font-weight:700;}
+  .empty p{color:var(--muted);font-size:14px;max-width:240px;line-height:1.5;}
+  .empty button{
+    margin-top:8px;background:var(--indigo);color:#fff;border:none;border-radius:26px;
+    padding:14px 28px;font:600 15px Inter;cursor:pointer;
+  }
+
+  /* actions */
+  .actions{display:flex;gap:18px;align-items:center;justify-content:center;padding-bottom:20px;flex:0 0 auto;}
+  .act{
+    background:var(--card);border:1px solid;display:flex;align-items:center;justify-content:center;
+    cursor:pointer;filter:drop-shadow(0 4px 6px rgba(0,0,0,.25));transition:transform .12s ease;
+  }
+  .act:active{transform:scale(.9);}
+  .act.rewind{width:48px;height:48px;border-radius:24px;border-color:#fbbf24;color:#fbbf24;}
+  .act.x{width:64px;height:64px;border-radius:32px;border-color:var(--red);color:var(--red);}
+  .act.star{width:56px;height:56px;border-radius:28px;border-color:var(--amber);color:var(--amber);}
+  .act.check{width:64px;height:64px;border-radius:32px;border-color:var(--green);color:var(--green);}
+  .act.rewind svg{width:20px;height:20px;}
+  .act.x svg{width:25.6px;height:25.6px;}
+  .act.star svg{width:22.4px;height:22.4px;}
+  .act.check svg{width:25.6px;height:25.6px;}
+  .act.disabled{opacity:.35;pointer-events:none;filter:none;}
+
+  /* entrance animation for the screen chrome */
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
+  .header,.actions,.tabbar{animation:fadeUp .5s ease both;}
+  .actions{animation-delay:.15s;} .tabbar{animation-delay:.05s;}
+
+  /* tab bar */
+  .tabbar{height:90px;border-top:1px solid var(--border);background:var(--bg);
+    display:flex;align-items:center;justify-content:space-between;padding:0 24px;flex:0 0 auto;}
+  .tab{display:flex;flex-direction:column;gap:6px;align-items:center;color:var(--dim);}
+  .tab svg{width:24px;height:24px;}
+  .tab span{font-size:10px;font-weight:500;}
+  .tab.active{color:var(--indigo);}
+  .tab.active span{font-weight:700;}
+
+  /* match modal */
+  .modal{position:absolute;inset:0;z-index:20;display:none;align-items:center;justify-content:center;
+    background:rgba(5,7,13,.78);backdrop-filter:blur(6px);padding:32px;text-align:center;flex-direction:column;gap:18px;}
+  .modal.show{display:flex;}
+  .modal h2{font-size:32px;font-weight:800;background:linear-gradient(90deg,var(--indigo),#22d3ee);
+    -webkit-background-clip:text;background-clip:text;color:transparent;}
+  .modal p{color:var(--muted);font-size:15px;}
+  .modal .avatars{display:flex;gap:-10px;}
+  .modal .avatars img{width:96px;height:96px;border-radius:50%;border:3px solid var(--bg);object-fit:cover;}
+  .modal .avatars img:last-child{margin-left:-22px;}
+  .modal .mbtns{display:flex;flex-direction:column;gap:10px;width:100%;max-width:280px;margin-top:6px;}
+  .modal .mbtns button{border-radius:26px;padding:14px;font:700 15px Inter;cursor:pointer;border:none;}
+  .mbtns .primary{background:var(--indigo);color:#fff;}
+  .mbtns .ghost{background:transparent;color:var(--muted);border:1px solid var(--border)!important;}
+</style>
+</head>
+<body>
+<div class="phone" id="phone">
+  <!-- header -->
+  <div class="header">
+    <div class="top">
+      <div class="logo">FounderMatch</div>
+      <div class="icons">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+      </div>
+    </div>
+    <div class="subtitle">Encontre seu sócio ideal</div>
+  </div>
+
+  <!-- card stage -->
+  <div class="stage">
+    <div class="stack" id="stack"></div>
+    <div class="empty" id="empty">
+      <h3>Por hoje é só! 🎉</h3>
+      <p>Você viu todos os perfis compatíveis. Volte mais tarde ou recomece a busca.</p>
+      <button id="reset">Recomeçar</button>
+    </div>
+  </div>
+
+  <!-- actions -->
+  <div class="actions">
+    <div class="act rewind" id="rewindBtn" aria-label="Desfazer">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+    </div>
+    <div class="act x" data-act="left" aria-label="Pular">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </div>
+    <div class="act star" data-act="up" aria-label="Super like">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    </div>
+    <div class="act check" data-act="right" aria-label="Conectar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+  </div>
+
+  <!-- tab bar -->
+  <div class="tabbar">
+    <div class="tab active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span>Discover</span></div>
+    <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/></svg><span>Matches</span></div>
+    <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><span>Messages</span></div>
+    <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Profile</span></div>
+  </div>
+
+  <!-- match modal -->
+  <div class="modal" id="modal">
+    <h2>É um match! 🤝</h2>
+    <div class="avatars">
+      <img src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96'%3E%3Crect width='96' height='96' fill='%236366f1'/%3E%3Ctext x='50%25' y='54%25' font-family='Inter,sans-serif' font-size='34' font-weight='700' fill='white' text-anchor='middle' dominant-baseline='middle'%3EVC%3C/text%3E%3C/svg%3E" id="meAvatar" alt="">
+      <img src="" id="matchAvatar" alt="">
+    </div>
+    <p id="matchText">Vocês querem construir juntos.</p>
+    <div class="mbtns">
+      <button class="primary" id="goChat">Enviar mensagem</button>
+      <button class="ghost" id="keep">Continuar descobrindo</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---- Seed: 10 profissionais ---- */
+const PROFILES = [
+  {name:"Rafael Costa — CTO", loc:"São Paulo, BR", tags:["Full Stack Dev","AI/ML","Startup de 0→1"], bio:"Ex-Nubank, 8 anos construindo produtos. Busco ideia forte na área de fintech ou edtech.", pct:92, photo:"img/p1.jpg"},
+  {name:"Marina Almeida — CEO", loc:"São Paulo, BR", tags:["Growth","Vendas B2B","Fundraising"], bio:"Ex-iFood, escalei de 0 a 1M de usuários. Procuro um co-founder técnico para um SaaS.", pct:89, photo:"img/p2.jpg"},
+  {name:"Lucas Ferreira — Head of Product", loc:"Florianópolis, BR", tags:["Product","UX","Data"], bio:"10 anos em produto, lancei 3 apps top 10 na App Store. Quero resolver algo grande em saúde.", pct:85, photo:"img/p3.jpg"},
+  {name:"Beatriz Santos — Designer & Co-founder", loc:"Rio de Janeiro, BR", tags:["UI/UX","Branding","No-code"], bio:"Construo MVPs bonitos em semanas. Apaixonada por marketplaces e creator economy.", pct:82, photo:"img/p4.jpg"},
+  {name:"Pedro Henrique — ML Engineer", loc:"Campinas, BR", tags:["Machine Learning","Python","MLOps"], bio:"PhD em IA. Quero aplicar modelos de verdade em problemas de saúde e agro.", pct:80, photo:"img/p5.jpg"},
+  {name:"Camila Rocha — Marketing", loc:"Belo Horizonte, BR", tags:["Marketing","SEO","Comunidade"], bio:"Cresci comunidades de 100k+. Distribuição é meu superpoder — falta o produto certo.", pct:77, photo:"img/p6.jpg"},
+  {name:"Thiago Lima — CFO & Operações", loc:"São Paulo, BR", tags:["Finanças","Operações","Fundraising"], bio:"Ex-banco de investimento. Modelei rodadas Series A e estruturo operação do zero.", pct:74, photo:"img/p7.jpg"},
+  {name:"Júlia Mendes — Bizdev", loc:"Porto Alegre, BR", tags:["Parcerias","Vendas","Expansão"], bio:"Abri mercado em 5 países. Adoro fechar os primeiros grandes contratos de uma startup.", pct:71, photo:"img/p8.jpg"},
+  {name:"Gabriel Souza — Mobile Engineer", loc:"Recife, BR", tags:["iOS","Android","Flutter"], bio:"Apps com 5M+ downloads. Quero um co-founder de negócio para tocar a parte comercial.", pct:69, photo:"img/p9.jpg"},
+  {name:"Ana Carolina — Head of Data", loc:"Curitiba, BR", tags:["Data Science","Analytics","SQL"], bio:"Transformo dados em decisão. Busco fintech ou logtech com um problema rico em dados.", pct:66, photo:"img/p10.jpg"},
+];
+
+const stack = document.getElementById('stack');
+const emptyEl = document.getElementById('empty');
+const modal = document.getElementById('modal');
+let cards = [];
+
+function cardHTML(p){
+  return `
+    <span class="stamp like">Conectar</span>
+    <span class="stamp nope">Pular</span>
+    <span class="stamp super">Super ★</span>
+    <div class="info">
+      <div>
+        <div class="name">${p.name}</div>
+        <div class="loc">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          ${p.loc}
+        </div>
+      </div>
+      <div class="info" style="gap:8px">
+        <div class="help-label">Como posso te ajudar</div>
+        <div class="tags">${p.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+        <div class="bio">${p.bio}</div>
+      </div>
+      <div class="info" style="gap:8px">
+        <div class="compat-row"><span class="compat-pct">${p.pct}% compatível</span><span class="compat-sub">Baseado no seu perfil</span></div>
+        <div class="bar"><span style="width:${p.pct}%"></span></div>
+      </div>
+    </div>`;
+}
+
+function build(){
+  stack.innerHTML='';
+  cards = PROFILES.map((p,i)=>{
+    const el=document.createElement('div');
+    el.className='card';
+    el.style.backgroundImage=`url('${p.photo}')`;
+    el.innerHTML=cardHTML(p);
+    el._profile=p;
+    stack.appendChild(el);
+    return el;
+  });
+  // top card = first profile -> must be last in DOM (highest z). reverse z via order.
+  cards.forEach((el,i)=> el.style.zIndex = PROFILES.length - i);
+  // entrance: start offset + invisible, then animate into place
+  cards.forEach((el)=>{ el.style.transition='none'; el.style.transform='translateY(70px) scale(.9)'; el.style.opacity='0'; });
+  requestAnimationFrame(()=>{
+    remaining().slice(0,3).forEach((el,depth)=>{ el.style.transitionDelay=(0.18 - depth*0.05)+'s'; });
+    layout();
+    setTimeout(()=>cards.forEach(el=>el.style.transitionDelay=''), 600);
+  });
+  attachTop();
+  history=[]; updateRewind();
+}
+
+function remaining(){ return cards.filter(c=>!c._gone); }
+
+function layout(){
+  const rem = remaining();
+  rem.forEach((el,depth)=>{
+    if(el._dragging) return;
+    const scale = 1 - Math.min(depth,2)*0.04;
+    const ty = Math.min(depth,2)*12;
+    el.style.transition='transform .3s ease';
+    el.style.transform=`translateY(${ty}px) scale(${scale})`;
+    el.style.opacity = depth>2 ? 0 : 1;
+    el.style.pointerEvents = depth===0 ? 'auto' : 'none';
+  });
+  if(rem.length===0) emptyEl.classList.add('show');
+}
+
+let drag=null;
+let history=[];
+function attachTop(){
+  const top = remaining()[0];
+  if(!top || top._hasDown) return;
+  top._hasDown=true;
+  top.addEventListener('pointerdown', onDown);
+}
+
+function onDown(e){
+  const el=e.currentTarget;
+  el.setPointerCapture(e.pointerId);
+  el._dragging=true; el.style.transition='none';
+  drag={el, x0:e.clientX, y0:e.clientY, dx:0, dy:0};
+  el.addEventListener('pointermove', onMove);
+  el.addEventListener('pointerup', onUp);
+  el.addEventListener('pointercancel', onUp);
+}
+function onMove(e){
+  if(!drag) return;
+  drag.dx=e.clientX-drag.x0; drag.dy=e.clientY-drag.y0;
+  const rot=drag.dx/18;
+  drag.el.style.transform=`translate(${drag.dx}px,${drag.dy}px) rotate(${rot}deg)`;
+  const like=drag.el.querySelector('.stamp.like');
+  const nope=drag.el.querySelector('.stamp.nope');
+  const sup=drag.el.querySelector('.stamp.super');
+  const up = drag.dy < -60 && Math.abs(drag.dx) < 80;
+  like.style.opacity = up?0:Math.max(0, drag.dx/120);
+  nope.style.opacity = up?0:Math.max(0, -drag.dx/120);
+  sup.style.opacity = up?Math.min(1,-drag.dy/140):0;
+}
+function onUp(e){
+  if(!drag) return;
+  const {el,dx,dy}=drag;
+  el.removeEventListener('pointermove', onMove);
+  el.removeEventListener('pointerup', onUp);
+  el.removeEventListener('pointercancel', onUp);
+  el._dragging=false;
+  const TH=110;
+  if(dy < -130 && Math.abs(dx) < 90) fly(el,'up');
+  else if(dx > TH) fly(el,'right');
+  else if(dx < -TH) fly(el,'left');
+  else { el.style.transition='transform .3s ease'; el.style.transform=''; resetStamps(el); layout(); }
+  drag=null;
+}
+function resetStamps(el){ el.querySelectorAll('.stamp').forEach(s=>s.style.opacity=0); }
+
+function fly(el, dir){
+  el._gone=true;
+  el.style.transition='transform .35s ease, opacity .35s ease';
+  const off = dir==='up' ? 'translateY(-900px) rotate(-8deg)'
+            : dir==='right' ? 'translate(700px,-60px) rotate(28deg)'
+            : 'translate(-700px,-60px) rotate(-28deg)';
+  el.style.transform=off; el.style.opacity=0;
+  setTimeout(()=>{ el.style.display='none'; }, 360);
+  history.push({el, dir}); updateRewind();
+  layout(); attachTop();
+  if(dir==='right' || dir==='up'){ maybeMatch(el._profile, dir); }
+}
+
+/* ---- Rewind (Tinder Gold) ---- */
+const rewindBtn=document.getElementById('rewindBtn');
+function updateRewind(){ rewindBtn.classList.toggle('disabled', history.length===0); }
+function rewind(){
+  const last=history.pop(); if(!last) return;
+  const {el,dir}=last;
+  modal.classList.remove('show');
+  el._gone=false; el.style.display='';
+  resetStamps(el);
+  // place off-screen on the side it left, then animate back to center
+  el.style.transition='none';
+  el.style.opacity='1';
+  el.style.transform = dir==='up' ? 'translateY(-900px) rotate(-8deg)'
+    : dir==='right' ? 'translate(700px,-60px) rotate(28deg)'
+    : 'translate(-700px,-60px) rotate(-28deg)';
+  void el.offsetWidth; // reflow
+  requestAnimationFrame(()=>{ layout(); attachTop(); });
+  emptyEl.classList.remove('show');
+  updateRewind();
+}
+rewindBtn.addEventListener('click', rewind);
+
+/* trigger button swipe on current top card */
+function swipe(dir){
+  const top = remaining()[0];
+  if(!top) return;
+  // briefly show stamp
+  const map={left:'.nope',right:'.like',up:'.super'};
+  const s=top.querySelector('.stamp'+map[dir]); if(s){s.style.opacity=1;}
+  fly(top,dir);
+}
+document.querySelectorAll('.act').forEach(b=>{
+  b.addEventListener('click',()=>swipe(b.dataset.act));
+});
+
+/* match modal */
+function maybeMatch(p, dir){
+  // super like always matches; like ~55%
+  const isMatch = dir==='up' || Math.random()<0.55;
+  if(!isMatch) return;
+  document.getElementById('matchAvatar').src=p.photo;
+  document.getElementById('matchText').textContent =
+    `Você e ${p.name.split(' —')[0]} querem construir juntos.`;
+  setTimeout(()=>modal.classList.add('show'), 250);
+}
+document.getElementById('keep').addEventListener('click',()=>modal.classList.remove('show'));
+document.getElementById('goChat').addEventListener('click',()=>{
+  modal.classList.remove('show');
+  // tab -> Messages feedback
+  const tabs=document.querySelectorAll('.tab');
+  tabs.forEach(t=>t.classList.remove('active'));
+  tabs[2].classList.add('active');
+  setTimeout(()=>{ tabs.forEach(t=>t.classList.remove('active')); tabs[0].classList.add('active'); }, 1500);
+});
+
+/* reset */
+document.getElementById('reset').addEventListener('click',()=>{
+  emptyEl.classList.remove('show'); build();
+});
+
+/* keyboard: ← → ↑ */
+window.addEventListener('keydown',e=>{
+  if(e.key==='ArrowLeft') swipe('left');
+  if(e.key==='ArrowRight') swipe('right');
+  if(e.key==='ArrowUp') swipe('up');
+  if(e.key==='r'||e.key==='R') rewind();
+});
+
+build();
+</script>
+</body>
+</html>
