@@ -15,20 +15,21 @@
   html,body{height:100%;}
   body{
     font-family:'Inter',system-ui,sans-serif;
-    background:#05070d;
-    display:flex;align-items:center;justify-content:center;
-    min-height:100dvh;color:var(--ink);
+    background:var(--bg);
+    color:var(--ink);overflow:hidden;
   }
-  /* phone frame */
+  /* full-screen app: fills 100% width & height, responsive everywhere */
   .phone{
-    position:relative;width:402px;height:874px;max-width:100vw;max-height:100dvh;
+    position:fixed;inset:0;width:100%;height:100vh;height:100svh;
     background:var(--bg);overflow:hidden;display:flex;flex-direction:column;
-    justify-content:space-between;box-shadow:0 30px 80px rgba(0,0,0,.6);
+    justify-content:space-between;
   }
-  @media(max-width:430px){ .phone{width:100vw;height:100dvh;} }
+  /* on wider screens, keep the UI in a centered app column (no stretched cards);
+     full-bleed on phones since the column is wider than the viewport */
+  .header,.stage,.actions,.tabbar{width:100%;max-width:600px;margin-inline:auto;}
 
   /* header */
-  .header{padding:60px 24px 20px;display:flex;flex-direction:column;gap:4px;flex:0 0 auto;}
+  .header{padding:calc(env(safe-area-inset-top,0px) + 28px) clamp(20px,5vw,32px) 18px;display:flex;flex-direction:column;gap:4px;flex:0 0 auto;}
   .header .top{display:flex;align-items:center;justify-content:space-between;}
   .logo{font-weight:800;font-size:22px;color:var(--ink);}
   .header .icons{display:flex;gap:16px;}
@@ -110,8 +111,9 @@
   .actions{animation-delay:.15s;} .tabbar{animation-delay:.05s;}
 
   /* tab bar */
-  .tabbar{height:90px;border-top:1px solid var(--border);background:var(--bg);
-    display:flex;align-items:center;justify-content:space-between;padding:0 24px;flex:0 0 auto;}
+  .tabbar{height:calc(76px + env(safe-area-inset-bottom,0px));padding:0 clamp(20px,6vw,40px) env(safe-area-inset-bottom,0px);
+    border-top:1px solid var(--border);background:var(--bg);
+    display:flex;align-items:center;justify-content:space-between;flex:0 0 auto;}
   .tab{display:flex;flex-direction:column;gap:6px;align-items:center;color:var(--dim);}
   .tab svg{width:24px;height:24px;}
   .tab span{font-size:10px;font-weight:500;}
